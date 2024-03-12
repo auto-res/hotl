@@ -1,0 +1,916 @@
+2024-03-12 01:15:47,719 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7839f00>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:15:47,721 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:15:49,009 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:15:50,479 - ModelErrorLogger - ERROR - Exec Error: invalid number of arguments
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/autoresevaluator/train/dataloader.py", line 19, in _exec_model
+    y_pred = model(train_dataloader, test_dataloader, params)
+  File "/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py", line 97, in model
+    net = train(trainloader, params, device)
+  File "/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py", line 70, in train
+    updated_param, m, v = gradient_descent_with_adam_and_weight_decay(
+  File "/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py", line 29, in gradient_descent_with_adam_and_weight_decay
+    gradient = np.gradient(objective(params), params)
+  File "/usr/local/lib/python3.10/dist-packages/numpy/lib/function_base.py", line 1186, in gradient
+    raise TypeError("invalid number of arguments")
+TypeError: invalid number of arguments
+2024-03-12 01:15:50,488 - ModelErrorLogger - INFO - ------Codefix------
+2024-03-12 01:16:25,825 - ModelErrorLogger - INFO - output: import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+def gradient_descent_with_adam_and_weight_decay(objective, params, lr, beta1, beta2, m, v, weight_decay, epsilon):
+    # Compute gradient with optional weight decay
+    gradient = np.gradient(objective, params)  # Removed the function call on objective
+    if weight_decay != 0:
+        gradient += weight_decay * params
+
+    # Update parameters using Adam
+    m = beta1 * m + (1 - beta1) * gradient  # Update first moment estimate
+    v = beta2 * v + (1 - beta2) * (gradient**2)  # Update second moment estimate
+    m_hat = m / (1 - beta1)  # Bias correction for first moment
+    v_hat = v / (1 - beta2)  # Bias correction for second moment
+    params -= lr * m_hat / (np.sqrt(v_hat) + epsilon)  # Update parameters
+
+    return params, m, v
+
+def train(trainloader, params, device):
+    net = Net()
+    net.to(device)  # Move the model to the specified device
+
+    criterion = nn.CrossEntropyLoss()
+    # Replace Adam optimizer with custom gradient descent with Adam and optional weight decay
+    # optimizer = optim.Adam(net.parameters(), lr=params['lr'])
+    m, v = 0, 0  # Initialize first and second moment vectors
+    beta1, beta2 = 0.9, 0.999  # Hyperparameters for Adam
+    epsilon = 1e-8  # Small number to prevent division by zero
+    weight_decay = params.get('weight_decay', 0)  # Optional weight decay
+
+    for epoch in range(1):  # loop over the dataset multiple times
+        running_loss = 0.0
+        for i, data in enumerate(trainloader, 0):
+            inputs, labels = data[0].to(device), data[1].to(device)  # Move inputs and labels to the specified device
+
+            # optimizer.zero_grad()  # zero the parameter gradients
+            # Custom gradient descent with Adam and optional weight decay does not use optimizer.zero_grad()
+
+            outputs = net(inputs)  # forward + backward + optimize
+            loss = criterion(outputs, labels)
+            loss.backward()
+            # optimizer.step()
+            # Custom update step using gradient descent with Adam and optional weight decay
+            for param in net.parameters():
+                if param.grad is not None:
+                    grad = param.grad.data.cpu().numpy()
+                    updated_param, m, v = gradient_descent_with_adam_and_weight_decay(
+                        grad, param.data.cpu().numpy(), params['lr'], beta1, beta2, m, v, weight_decay, epsilon
+                    )
+                    param.data = torch.from_numpy(updated_param).to(device)
+
+            running_loss += loss.item()
+            if i % 2000 == 1999:  # print every 2000 mini-batches
+                running_loss = 0.0
+
+    return net
+
+def test(net, testloader, device):
+    all_outputs = []
+
+    with torch.no_grad():
+        for data in testloader:
+            images, labels = data[0].to(device), data[1].to(device)  # Move images to the specified device
+            outputs = net(images)
+            probabilities = F.softmax(outputs, dim=1)
+            probabilities_np = probabilities.cpu().numpy().tolist()  # Move the probabilities back to CPU for numpy conversion
+            all_outputs.extend(probabilities_np)
+
+    all_outputs_np = np.array(all_outputs)
+    return all_outputs_np
+
+def model(trainloader, testloader, params):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net = train(trainloader, params, device)
+    y_pred = test(net, testloader, device)
+    return y_pred
+2024-03-12 01:16:25,834 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787c340>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:16:25,836 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:16:25,857 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:16:26,020 - ModelErrorLogger - ERROR - Exec Error: invalid number of arguments
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/autoresevaluator/train/dataloader.py", line 19, in _exec_model
+    y_pred = model(train_dataloader, test_dataloader, params)
+  File "/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py", line 96, in model
+    net = train(trainloader, params, device)
+  File "/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py", line 69, in train
+    updated_param, m, v = gradient_descent_with_adam_and_weight_decay(
+  File "/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py", line 28, in gradient_descent_with_adam_and_weight_decay
+    gradient = np.gradient(objective, params)  # Removed the function call on objective
+  File "/usr/local/lib/python3.10/dist-packages/numpy/lib/function_base.py", line 1186, in gradient
+    raise TypeError("invalid number of arguments")
+TypeError: invalid number of arguments
+2024-03-12 01:16:26,028 - ModelErrorLogger - INFO - ------Codefix------
+2024-03-12 01:17:11,570 - ModelErrorLogger - INFO - output: import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+def gradient_descent_with_adam_and_weight_decay(gradient, params, lr, beta1, beta2, m, v, weight_decay, epsilon):
+    if weight_decay != 0:
+        gradient += weight_decay * params
+
+    m = beta1 * m + (1 - beta1) * gradient
+    v = beta2 * v + (1 - beta2) * (gradient**2)
+    m_hat = m / (1 - beta1)
+    v_hat = v / (1 - beta2)
+    params -= lr * m_hat / (np.sqrt(v_hat) + epsilon)
+
+    return params, m, v
+
+def train(trainloader, params, device):
+    net = Net()
+    net.to(device)
+
+    criterion = nn.CrossEntropyLoss()
+    m, v = 0, 0
+    beta1, beta2 = 0.9, 0.999
+    epsilon = 1e-8
+    weight_decay = params.get('weight_decay', 0)
+
+    for epoch in range(1):
+        running_loss = 0.0
+        for i, data in enumerate(trainloader, 0):
+            inputs, labels = data[0].to(device), data[1].to(device)
+
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            for param in net.parameters():
+                if param.grad is not None:
+                    grad = param.grad.data.cpu().numpy()
+                    updated_param, m, v = gradient_descent_with_adam_and_weight_decay(
+                        grad, param.data.cpu().numpy(), params['lr'], beta1, beta2, m, v, weight_decay, epsilon
+                    )
+                    param.data = torch.from_numpy(updated_param).to(device)
+
+            running_loss += loss.item()
+            if i % 2000 == 1999:
+                running_loss = 0.0
+
+    return net
+
+def test(net, testloader, device):
+    all_outputs = []
+
+    with torch.no_grad():
+        for data in testloader:
+            images, labels = data[0].to(device), data[1].to(device)
+            outputs = net(images)
+            probabilities = F.softmax(outputs, dim=1)
+            probabilities_np = probabilities.cpu().numpy().tolist()
+            all_outputs.extend(probabilities_np)
+
+    all_outputs_np = np.array(all_outputs)
+    return all_outputs_np
+
+def model(trainloader, testloader, params):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net = train(trainloader, params, device)
+    y_pred = test(net, testloader, device)
+    return y_pred
+2024-03-12 01:17:11,581 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628ea30a0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:17:11,583 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:17:11,604 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:17:11,797 - ModelErrorLogger - ERROR - Exec Error: operands could not be broadcast together with shapes (6,3,5,5) (6,) 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/autoresevaluator/train/dataloader.py", line 19, in _exec_model
+    y_pred = model(train_dataloader, test_dataloader, params)
+  File "/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py", line 86, in model
+    net = train(trainloader, params, device)
+  File "/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py", line 59, in train
+    updated_param, m, v = gradient_descent_with_adam_and_weight_decay(
+  File "/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py", line 30, in gradient_descent_with_adam_and_weight_decay
+    m = beta1 * m + (1 - beta1) * gradient
+ValueError: operands could not be broadcast together with shapes (6,3,5,5) (6,) 
+2024-03-12 01:17:11,808 - ModelErrorLogger - INFO - ------Codefix------
+2024-03-12 01:17:56,953 - ModelErrorLogger - INFO - output: import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 5 * 5)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+def gradient_descent_with_adam_and_weight_decay(gradient, params, lr, beta1, beta2, m, v, weight_decay, epsilon):
+    if weight_decay != 0:
+        gradient += weight_decay * params
+
+    m = beta1 * m + (1 - beta1) * gradient
+    v = beta2 * v + (1 - beta2) * (gradient**2)
+    m_hat = m / (1 - beta1)
+    v_hat = v / (1 - beta2)
+    params -= lr * m_hat / (np.sqrt(v_hat) + epsilon)
+
+    return params, m, v
+
+def train(trainloader, params, device):
+    net = Net()
+    net.to(device)
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(net.parameters(), lr=params['lr'], weight_decay=params.get('weight_decay', 0))
+
+    for epoch in range(1):
+        running_loss = 0.0
+        for i, data in enumerate(trainloader, 0):
+            inputs, labels = data[0].to(device), data[1].to(device)
+
+            optimizer.zero_grad()
+
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+            if i % 2000 == 1999:
+                running_loss = 0.0
+
+    return net
+
+def test(net, testloader, device):
+    all_outputs = []
+
+    with torch.no_grad():
+        for data in testloader:
+            images, labels = data[0].to(device), data[1].to(device)
+            outputs = net(images)
+            probabilities = F.softmax(outputs, dim=1)
+            probabilities_np = probabilities.cpu().numpy().tolist()
+            all_outputs.extend(probabilities_np)
+
+    all_outputs_np = np.array(all_outputs)
+    return all_outputs_np
+
+def model(trainloader, testloader, params):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net = train(trainloader, params, device)
+    y_pred = test(net, testloader, device)
+    return y_pred
+2024-03-12 01:17:56,962 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7816980>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:17:56,964 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:17:56,997 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:18:25,564 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783faf0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:18:25,566 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:18:25,571 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:18:54,892 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628ea30d0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:18:54,893 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:18:54,902 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:19:25,703 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628ea2740>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:19:25,705 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:19:25,709 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:19:54,310 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f78075e0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:19:54,312 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:19:54,316 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:20:22,987 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783fca0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:20:22,989 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:20:22,994 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:20:51,705 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783eda0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:20:51,706 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:20:51,711 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:21:20,542 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783e5f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:21:20,544 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:21:20,551 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:21:49,905 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783f070>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:21:49,907 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:21:49,914 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:22:18,943 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7805810>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:22:18,947 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:22:18,956 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:22:48,515 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7839f90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:22:48,517 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:22:48,525 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:23:17,485 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7839a50>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:23:17,486 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:23:17,495 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:23:46,673 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783c430>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:23:46,675 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:23:46,682 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:24:15,549 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783f1f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:24:15,551 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:24:15,556 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:24:46,133 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7806a70>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:24:46,135 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:24:46,140 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:25:20,368 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628ea2d10>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:25:20,370 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:25:20,376 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:25:49,659 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f78173d0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:25:49,661 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:25:49,666 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:26:18,782 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783ef50>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:26:18,784 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:26:18,789 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:26:48,320 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787d8d0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:26:48,322 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:26:48,327 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:27:18,760 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628ea3d90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:27:18,762 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:27:18,771 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:27:49,287 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628ea16f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:27:49,289 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:27:49,295 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:28:18,607 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f79c1db0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:28:18,608 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:28:18,615 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:28:47,635 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f79c3130>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:28:47,636 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:28:47,640 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:29:16,497 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f79c04f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:29:16,499 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:29:16,505 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:29:45,104 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f79739d0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:29:45,105 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:29:45,109 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:30:15,364 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f47310>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:30:15,368 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:30:15,376 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:30:45,016 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f47d90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:30:45,018 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:30:45,022 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:31:14,603 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f461d0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:31:14,604 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:31:14,611 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:31:43,068 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df57a30>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:31:43,070 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:31:43,075 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:32:12,223 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df57e80>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:32:12,225 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:32:12,232 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:32:43,018 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f3c250>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:32:43,020 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:32:43,024 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:33:12,327 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783c430>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:33:12,329 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:33:12,336 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:33:42,795 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df55c00>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:33:42,797 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:33:42,803 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:34:12,170 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787e170>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:34:12,171 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:34:12,177 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:34:41,386 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783b280>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:34:41,388 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:34:41,393 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:35:10,658 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f78290c0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:35:10,660 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:35:10,674 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:35:40,333 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7973bb0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:35:40,335 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:35:40,339 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:36:10,111 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7973730>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:36:10,113 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:36:10,122 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:36:41,553 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4a9f00>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:36:41,558 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:36:41,568 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:37:10,262 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a57ac80>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:37:10,263 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:37:10,269 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:37:39,307 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a57b880>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:37:39,310 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:37:39,316 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:38:08,224 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a57a980>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:38:08,226 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:38:08,233 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:38:36,932 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a57a4a0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:38:36,933 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:38:36,940 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:39:05,799 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a57a8f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:39:05,801 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:39:05,809 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:39:35,227 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a578a90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:39:35,229 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:39:35,235 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:40:04,301 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4a7e50>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:40:04,306 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:40:04,312 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:40:33,023 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4a5e40>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:40:33,025 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:40:33,031 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:41:01,311 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4a68f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:41:01,313 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:41:01,319 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:41:29,481 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4a7340>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:41:29,482 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:41:29,489 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:41:59,726 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9629027ee0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:41:59,727 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:41:59,732 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:42:28,347 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9629027040>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:42:28,348 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:42:28,355 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:42:56,782 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f78053f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:42:56,783 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:42:56,790 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:43:25,601 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f3d9f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:43:25,603 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:43:25,608 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:43:54,875 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9629027a90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:43:54,878 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:43:54,889 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:44:23,571 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628ea3d90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:44:23,573 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:44:23,578 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:44:53,581 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628ea35e0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:44:53,584 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:44:53,589 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:45:21,662 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df56890>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:45:21,666 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:45:21,679 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:45:49,758 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787d450>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:45:49,760 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:45:49,765 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:46:17,764 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df57dc0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:46:17,766 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:46:17,770 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:46:45,898 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a56bee0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:46:45,900 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:46:45,906 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:47:14,198 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b6e00>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:47:14,200 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:47:14,205 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:47:44,316 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b7eb0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:47:44,317 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:47:44,322 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:48:12,852 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b7d00>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:48:12,854 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:48:12,863 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:48:41,843 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b40a0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:48:41,845 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:48:41,851 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:49:10,753 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b74c0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:49:10,754 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:49:10,760 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:49:39,126 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b4850>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:49:39,128 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:49:39,133 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:50:09,016 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b63b0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:50:09,018 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:50:09,023 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:50:37,330 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b78e0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:50:37,332 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:50:37,337 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:51:05,558 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628fae860>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:51:05,560 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:51:05,566 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:51:34,184 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787d450>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:51:34,187 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:51:34,192 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:52:02,384 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a56bee0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:52:02,386 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:52:02,392 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:52:32,035 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9629027a90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:52:32,037 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:52:32,045 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:53:02,875 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f3d9f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:53:02,877 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:53:02,883 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:53:31,917 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df54070>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:53:31,919 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:53:31,924 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:54:00,440 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783a290>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:54:00,442 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:54:00,448 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:54:29,051 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783b280>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:54:29,054 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:54:29,061 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:54:57,831 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b6c50>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:54:57,833 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:54:57,840 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:55:27,189 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b4940>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:55:27,191 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:55:27,200 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:55:57,017 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b7160>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:55:57,019 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:55:57,030 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:56:26,675 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df2d960>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:56:26,677 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:56:26,682 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:56:55,452 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df2fd90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:56:55,453 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:56:55,457 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:57:24,694 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df2f640>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:57:24,696 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:57:24,702 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:57:53,502 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df2e7a0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:57:53,503 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:57:53,511 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:58:24,448 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd87190>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:58:24,450 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:58:24,456 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:58:53,271 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd87eb0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:58:53,273 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:58:53,278 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:59:22,776 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd878b0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:59:22,778 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:59:22,790 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 01:59:53,388 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd87820>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 01:59:53,390 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 01:59:53,396 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:00:21,783 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd845e0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:00:21,785 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:00:21,790 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:00:50,365 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd849d0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:00:50,367 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:00:50,373 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:01:20,560 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df9b6a0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:01:20,562 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:01:20,567 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:01:49,023 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df99270>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:01:49,025 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:01:49,030 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:02:17,556 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7838550>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:02:17,559 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:02:17,566 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:02:46,464 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f3c4f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:02:46,466 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:02:46,472 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:03:16,227 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd87eb0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:03:16,232 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:03:16,237 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:03:46,791 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787ef80>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:03:46,793 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:03:46,800 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:04:15,239 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9629026650>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:04:15,240 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:04:15,247 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:04:43,260 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4a6c20>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:04:43,262 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:04:43,267 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:05:11,364 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd877c0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:05:11,366 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:05:11,371 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:05:39,974 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df2d000>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:05:39,977 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:05:39,984 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:06:08,011 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4f7e20>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:06:08,012 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:06:08,019 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:06:40,239 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4a6c50>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:06:40,241 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:06:40,271 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:07:08,314 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f78058d0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:07:08,315 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:07:08,320 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:07:36,350 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df2f700>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:07:36,353 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:07:36,357 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:08:04,770 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df2c7f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:08:04,771 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:08:04,779 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:08:32,417 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9618183430>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:08:32,419 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:08:32,424 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:08:59,959 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96181825f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:08:59,961 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:08:59,970 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:09:29,122 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4f7c10>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:09:29,124 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:09:29,130 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:09:56,823 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b7e50>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:09:56,824 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:09:56,829 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:10:25,257 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4f60b0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:10:25,259 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:10:25,266 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:10:53,168 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7817b20>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:10:53,170 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:10:53,175 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:11:20,748 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787fca0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:11:20,750 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:11:20,755 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:11:48,016 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f799d720>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:11:48,018 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:11:48,024 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:12:17,167 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a56bee0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:12:17,169 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:12:17,180 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:12:45,691 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960df2ea40>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:12:45,692 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:12:45,699 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:13:13,803 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4b5930>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:13:13,805 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:13:13,810 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:13:41,797 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f783dba0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:13:41,798 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:13:41,802 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:14:09,417 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a57a8c0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:14:09,419 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:14:09,424 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:14:36,963 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d961a4a6c50>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:14:36,965 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:14:36,971 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:15:06,141 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd875b0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:15:06,143 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:15:06,148 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:15:33,844 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f45840>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:15:33,846 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:15:33,852 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:16:01,552 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd1e2f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:16:01,554 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:16:01,558 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:16:29,066 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd1da80>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:16:29,068 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:16:29,073 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:16:56,617 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd1f5b0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:16:56,619 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:16:56,623 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:17:24,064 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd1fb20>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:17:24,066 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:17:24,075 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:17:53,068 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd1ebf0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:17:53,069 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:17:53,076 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:18:21,083 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dde7a30>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:18:21,086 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:18:21,094 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:18:48,754 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dde5d80>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:18:48,756 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:18:48,761 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:19:17,684 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628ea25c0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:19:17,686 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:19:17,695 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:19:46,065 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7804370>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:19:46,069 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:19:46,077 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:20:14,182 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7829f60>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:20:14,184 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:20:14,190 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:20:43,070 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787cb80>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:20:43,072 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:20:43,077 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:21:10,944 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f3d7b0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:21:10,945 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:21:10,961 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:21:38,810 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787d6f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:21:38,814 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:21:38,818 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:22:06,296 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd1ee60>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:22:06,299 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:22:06,310 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:22:33,805 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd1fa30>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:22:33,806 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:22:33,812 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:23:01,481 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc77700>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:23:01,482 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:23:01,487 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:23:30,331 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd4b340>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:23:30,333 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:23:30,339 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:23:58,227 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc76e00>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:23:58,230 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:23:58,235 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:24:25,754 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd4b8e0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:24:25,755 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:24:25,761 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:24:53,532 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd49fc0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:24:53,533 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:24:53,542 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:25:22,725 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd4b6a0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:25:22,727 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:25:22,734 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:25:52,718 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd4b040>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:25:52,720 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:25:52,734 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:26:22,412 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc74460>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:26:22,414 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:26:22,420 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:26:50,534 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc74790>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:26:50,535 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:26:50,542 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:27:18,925 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc69390>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:27:18,927 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:27:18,932 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:27:46,995 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc6b730>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:27:46,997 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:27:47,005 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:28:15,054 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc6af20>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:28:15,056 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:28:15,062 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:28:43,264 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc6aad0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:28:43,266 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:28:43,272 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:29:13,428 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd4bfd0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:29:13,429 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:29:13,435 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:29:41,510 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc694b0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:29:41,514 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:29:41,521 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:30:10,288 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9618180d60>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:30:10,291 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:30:10,296 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:30:38,808 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f799fbe0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:30:38,813 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:30:38,819 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:31:07,162 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc77850>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:31:07,164 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:31:07,170 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:31:37,997 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dde5990>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:31:37,999 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:31:38,004 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:32:08,364 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7829f90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:32:08,366 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:32:08,372 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:32:37,633 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7838be0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:32:37,638 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:32:37,644 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:33:06,632 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc8aa70>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:33:06,634 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:33:06,646 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:33:34,821 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc8bd30>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:33:34,823 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:33:34,830 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:34:03,712 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcd7ac0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:34:03,714 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:34:03,719 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:34:34,329 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f3f6a0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:34:34,332 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:34:34,339 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:35:02,446 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dde77c0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:35:02,449 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:35:02,454 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:35:30,562 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcd81f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:35:30,564 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:35:30,569 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:35:59,164 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcd8a30>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:35:59,165 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:35:59,171 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:36:28,230 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcda620>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:36:28,235 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:36:28,240 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:36:57,664 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcdbd30>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:36:57,666 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:36:57,680 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:37:27,814 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcdbe20>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:37:27,815 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:37:27,823 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:37:56,207 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcdc3a0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:37:56,209 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:37:56,217 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:38:24,897 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcde500>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:38:24,899 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:38:24,907 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:38:53,084 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9618180d60>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:38:53,086 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:38:53,091 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:39:21,633 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9628f3d450>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:39:21,635 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:39:21,642 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:39:50,171 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f7805720>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:39:50,172 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:39:50,179 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:40:20,399 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc88df0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:40:20,401 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:40:20,410 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:40:49,501 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f78287f0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:40:49,502 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:40:49,509 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:41:17,787 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d96f787d570>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:41:17,789 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:41:17,794 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:41:45,960 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc8a590>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:41:45,961 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:41:45,967 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:42:14,374 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd572e0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:42:14,376 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:42:14,387 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:42:42,718 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dd56560>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:42:42,720 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:42:42,725 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:43:12,179 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcdf1c0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:43:12,180 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:43:12,188 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:43:40,457 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc2f130>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:43:40,458 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:43:40,463 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:44:08,654 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc2f5b0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:44:08,655 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:44:08,660 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:44:37,177 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc2fbe0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:44:37,179 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:44:37,187 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:45:06,054 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc2fac0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:45:06,056 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:45:06,064 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:45:34,716 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc2c880>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:45:34,718 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:45:34,724 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:46:04,268 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcfb430>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:46:04,270 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:46:04,276 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:46:32,649 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcfb820>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:46:32,651 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:46:32,656 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:47:00,665 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcf9c90>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:47:00,668 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:47:00,674 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:47:28,718 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcfa080>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:47:28,719 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:47:28,723 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:47:56,643 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc59c60>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:47:56,645 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:47:56,651 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:48:25,292 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcd9450>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:48:25,295 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:48:25,303 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:48:54,741 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc76e00>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:48:54,744 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:48:54,753 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:49:23,191 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc75240>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:49:23,193 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:49:23,202 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:49:52,245 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d9618180d60>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:49:52,246 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:49:52,254 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:50:20,766 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcdac20>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:50:20,767 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:50:20,773 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:50:48,795 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dcdcf40>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:50:48,797 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:50:48,802 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:51:16,788 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc2ff70>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:51:16,790 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:51:16,798 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:51:46,661 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc58040>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:51:46,662 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:51:46,666 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:52:15,087 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc5ad10>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:52:15,090 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:52:15,096 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:52:43,514 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc301c0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:52:43,515 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:52:43,520 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:53:11,579 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc335b0>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:53:11,582 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:53:11,590 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
+2024-03-12 02:53:40,028 - ModelErrorLogger - INFO - ModuleSpec: ModuleSpec(name='copy_file', loader=<_frozen_importlib_external.SourceFileLoader object at 0x7d960dc31b70>, origin='/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py')
+2024-03-12 02:53:40,030 - ModelErrorLogger - INFO - Module: <module 'copy_file' from '/content/drive/MyDrive/Autores/Mockup_pipline2/output/copy_file.py'>
+2024-03-12 02:53:40,036 - ModelErrorLogger - INFO - メソッドが正常にインポートされました
