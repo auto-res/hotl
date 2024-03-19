@@ -27,6 +27,12 @@ class main_loop():
         self.M_name = M_name
         self.A_name = A_name
         self.reference_python = reference_python
+        self.mix_python = ""
+        self.program2 = ""
+        self.think = ""
+        self.think2 = ""
+        self.python2_1 = ""
+        self.python2_2 = ""
 
     def main_loop(self):
         default_message = """貴方は研究者です．あなたのタスクは2つの手法を組み合わせることによって新規手法を生み出し，その結果を考察することです．
@@ -83,9 +89,14 @@ class main_loop():
         
           if ans_json['研究の流れ'] == "Creation of pseudo-algorithms":
             AB = AplusB(self.api_key,self.GPT_id,self.M_pseudocode,self.Ad_pseudocode,self.M_name,self.A_name)
-            mix_python,think1,python1_1,python1_2,think2,python2_1,python2_2 = AB.M2_code_gen()
+            mix_python,think,think2,python2_1,python2_2 = AB.M2_code_gen()
             result = mix_python
             print(mix_python)
+            self.mix_python = mix_python
+            self.think = think
+            self.think2 = think2
+            self.python2_1 = python2_1
+            self.python2_2 = python2_2
         
           elif ans_json['研究の流れ'] == "Creating Python Programs":
             if 'mix_python' in locals():
@@ -93,7 +104,7 @@ class main_loop():
               pro1 = PRO(self.api_key,self.GPT_id,self.M_name,mix_python,self.reference_python)
               program2 = pro1.gen_program()
               result = program2
-              
+              self.program2 = program2
 
               os.makedirs("output", exist_ok=True)
               f = open("./output/M2_code.py","w")
@@ -111,39 +122,54 @@ class main_loop():
               params = {
                   'lr': {'type': 'log_float', 'args': [1e-5, 1e-3]}
               }
+              #params = {
+              #    'learning_rate': {'type': 'log_float', 'args': [1e-8, 0.1]},
+              #    'iterations': {'type': 'log_float', 'args': [100, 1000]},
+              #    "lambda": 1
+              #}
               model_path='/content/drive/MyDrive/Autores/Mockup_pipline2/output/M2_code.py'
               are = AutoResEvaluator(
                     llm_name='gpt-4-turbo-preview',
                     dataset_name='cifar10',
-                    params=params,
                     valuation_index='accuracy',
-                    datasave_path='./data'
+                    datasave_path='./data',
+                    params=params,
                     )
               are.exec(model_path)
-              with open("result.log") as f:
+              if not os.path.isfile("result.log"):
+                with open("result.log",mode='x') as f:
+                  s = f.read()
+              else:
+                with open("result.log",mode='w') as f:
                   s = f.read()
               output2 = s.split("\n")
               output2 = output2[len(output2)-3:]
 
-
+              
               print("M1_Start")
               params = {
                   'lr': {'type': 'log_float', 'args': [1e-5, 1e-3]}
               }
+              #params = {
+              #    'learning_rate': {'type': 'log_float', 'args': [1e-8, 0.1]},
+              #    'iterations': {'type': 'log_float', 'args': [100, 1000]},
+              #    "lambda": 1
+              #}
               model_path='/content/drive/MyDrive/Autores/Mockup_pipline2/output/M_code.py'
+              
               are = AutoResEvaluator(
                     llm_name='gpt-4-turbo-preview',
                     dataset_name='cifar10',
-                    params=params,
                     valuation_index='accuracy',
-                    datasave_path='./data'
+                    datasave_path='./data',
+                    params=params,
                     )
               are.exec(model_path)
               with open("result.log") as f:
                   s = f.read()
               output1 = s.split("\n")
               output1 = output1[len(output1)-3:]
-              
+
 
               old_log = [
                     {
@@ -251,4 +277,4 @@ class main_loop():
             }
             ]
 
-        return mix_python,think1,python1_1,python1_2,think2,python2_1,python2_2
+        return mix_python,program2,think,think2,python2_1,python2_2
