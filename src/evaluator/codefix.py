@@ -3,7 +3,7 @@ from ..utils.log_config import setup_logging
 _, _, model_logger = setup_logging()
 
 
-def codefix(llm_model, copy_file_path, error):
+def codefix(llm_name, llm_model, copy_file_path, error):
     model_logger.info("------Codefix------")
 
     with open(copy_file_path, "r") as file:
@@ -21,7 +21,7 @@ def codefix(llm_model, copy_file_path, error):
     Correct the "Python code" based on the "Error message". Output only the modified "Python code" without using the code block.
     """.format(content=content, error=error)
 
-    output = llm_model(input)
+    output = llm_model(llm_name, input)
     model_logger.info(f"output: {output}")
 
     with open(copy_file_path, "w") as file:

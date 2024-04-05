@@ -35,11 +35,18 @@ def _set_trial_params(trial, params):
 
 
 def _dataset_objective(
-    llm_model, copy_file_path, train_dataloader, metric, params, valuation_index
+    llm_name,
+    llm_model,
+    copy_file_path,
+    train_dataloader,
+    metric,
+    params,
+    valuation_index,
 ):
     def objective(trial):
         optuna_params = _set_trial_params(trial, params)
         average_index = pred_dataset(
+            llm_name,
             llm_model,
             copy_file_path,
             train_dataloader,
@@ -54,6 +61,7 @@ def _dataset_objective(
 
 
 def _dataloader_objective(
+    llm_name,
     llm_model,
     copy_file_path,
     train_dataloader,
@@ -65,6 +73,7 @@ def _dataloader_objective(
     def objective(trial):
         optuna_params = _set_trial_params(trial, params)
         average_index = pred_dataloader(
+            llm_name,
             llm_model,
             copy_file_path,
             train_dataloader,
@@ -80,6 +89,7 @@ def _dataloader_objective(
 
 
 def exec_optuna(
+    llm_name: str,
     llm_model: Callable[[str], str],
     copy_file_path: str,
     train_dataloader,
@@ -89,16 +99,23 @@ def exec_optuna(
     valuation_index: str,
     objective: Callable[..., Any],
     datatype: str,
+    n_trials: int,
 ) -> None:
     result_logger.info("------Optuna start------")
-    n_trials = 100
     study = optuna.create_study(direction=objective)
     if datatype == "table":
         objective = _dataset_objective(
-            llm_model, copy_file_path, train_dataloader, metric, params, valuation_index
+            llm_name,
+            llm_model,
+            copy_file_path,
+            train_dataloader,
+            metric,
+            params,
+            valuation_index,
         )
     else:
         objective = _dataloader_objective(
+            llm_name,
             llm_model,
             copy_file_path,
             train_dataloader,
@@ -115,4 +132,4 @@ def exec_optuna(
         study.optimize(objective, n_trials=n_trials, callbacks=[callback])
     result_logger.info(f"Best params:{study.best_params}")
     result_logger.info(f"Best score:{study.best_value}")
-    return
+    return study.best_value

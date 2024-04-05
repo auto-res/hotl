@@ -1,10 +1,10 @@
 from openai import OpenAI
 
 
-def _openai_model(prompt):
+def _openai_model(model_name, prompt):
     client = OpenAI()
     response = client.chat.completions.create(
-        model="gpt-4-turbo-preview",
+        model=model_name,
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
         seed=3655,

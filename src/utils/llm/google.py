@@ -1,9 +1,9 @@
 import google.generativeai as genai
 
 
-def _googel_model(prompt):
+def _googel_model(model_name, prompt):
     model = genai.GenerativeModel(
-        "gemini-pro",
+        model_name,
         generation_config=dict(
             # temperature=temperature,
             # top_p=None,

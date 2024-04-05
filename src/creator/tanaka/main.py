@@ -1,19 +1,19 @@
-from ..utils.log_config import setup_logging
+from ...utils.log_config import setup_logging
 
 import re
 
-from ..utils.jinja_template import make_prompt
+from ...utils.jinja_template import make_prompt
 import importlib.resources as pkg_resources
 
 
-from ..utils.llm.openai import _openai_model
-from ..utils.llm.google import _googel_model
-from ..utils.llm.anthropic import _anthropic_model
+from ...utils.llm.openai import _openai_model
+from ...utils.llm.google import _googel_model
+from ...utils.llm.anthropic import _anthropic_model
 
 makemethod_logger, _, _ = setup_logging()
 
 
-class AutoResMaker:
+class Creator:
     def __init__(
         self,
         llm_name: str,
@@ -27,12 +27,8 @@ class AutoResMaker:
         self._select_llm()
 
     def _load_prompt_templates(self) -> None:
-        synthtic_prompt_mapping = {
-            "base": "src.autoresmaker.prompt_template",
-        }
-
-        base_prompt_mapping = {
-            "cifar10": "src.autoresmaker.prompt_template.cifar10",
+        prompt_template_mapping = {
+            "path": "src.utils.prompt_template",
         }
 
         model_prompt_mapping = {
@@ -40,12 +36,12 @@ class AutoResMaker:
         }
 
         with pkg_resources.open_text(
-            synthtic_prompt_mapping["base"], "synthetic_template.j2"
+            prompt_template_mapping["path"], "synthetic_template.j2"
         ) as file:
             self._synthetic_prompt_template = file.read()
 
         with pkg_resources.open_text(
-            base_prompt_mapping[self.dataset_name],
+            prompt_template_mapping["path"],
             model_prompt_mapping[self.base_model],
         ) as file:
             self._default_fit_prompt_template = file.read()

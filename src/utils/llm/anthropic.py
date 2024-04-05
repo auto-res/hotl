@@ -1,7 +1,7 @@
 import anthropic
 
 
-def _anthropic_model(prompt):
+def _anthropic_model(model_name, prompt):
     client = anthropic.Anthropic()
     message = client.messages.create(
         model="claude-3-opus-20240229",

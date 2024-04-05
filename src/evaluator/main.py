@@ -7,7 +7,7 @@ from .metrix.binary_classification import (
     binary_classification,
     binary_classification_objective,
 )
-from .metrix.multiclass_classificatio import (
+from .metrix.multiclass_classification import (
     multiclass_classification,
     multiclass_classification_objective,
 )
@@ -24,7 +24,7 @@ from typing import Dict, Any
 _, result_logger, _ = setup_logging()
 
 
-class AutoResEvaluator:
+class Evaluator:
     def __init__(
         self,
         llm_name: str,
@@ -32,12 +32,14 @@ class AutoResEvaluator:
         params: Dict[str, Any],
         valuation_index: str,
         datasave_path: str,
+        n_trials: int,
     ) -> None:
         self.llm_name = llm_name
         self.dataset_name = dataset_name
         self.params = params
         self.valuation_index = valuation_index
         self.datasave_path = datasave_path
+        self.n_trials = n_trials
         self._select_dataset()
         self._select_llm()
         self.model = None
@@ -66,6 +68,9 @@ class AutoResEvaluator:
             self.llm_model = _googel_model
         elif self.llm_name == "claude-3-opus-20240229":
             self.llm_model = _anthropic_model
+        else:
+            raise ValueError(f"Invalid llm_name: {self.llm_name}")
+        return
 
     def _copy_file(self, model_path: str):
         last_slash_index = model_path.rfind("/")
@@ -84,7 +89,8 @@ class AutoResEvaluator:
         result_logger.info(f"objective: {self.objective}")
         self.copy_file_path = self._copy_file(model_path)
 
-        exec_optuna(
+        best_score = exec_optuna(
+            self.llm_name,
             self.llm_model,
             self.copy_file_path,
             self.train_dataloader,
@@ -94,5 +100,6 @@ class AutoResEvaluator:
             self.valuation_index,
             self.objective,
             self.datatype,
+            self.n_trials,
         )
-        pass
+        return best_score

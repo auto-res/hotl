@@ -2,7 +2,6 @@ import pandas as pd
 import seaborn as sns
 
 
-
 def titanic_data():
     df = sns.load_dataset("titanic")
     df.dropna(inplace=True)

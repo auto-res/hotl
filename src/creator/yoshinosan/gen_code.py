@@ -5,24 +5,24 @@ Created on Sun Feb  4 16:57:10 2024
 @author: Yz
 """
 
-
 from openai import OpenAI
 from src.LPML_paeser import LPML_paeser
 from src.LPML_wrapper_gpt import ChatGPT
 from src.LPML_wrapper_function import LLMFunction
 
+
 class PRO:
-    def __init__(self,api_key,GPT_id,M_name,mix_python,reference_python):
+    def __init__(self, api_key, GPT_id, M_name, mix_python, reference_python):
         self.GPT_id = GPT_id
         self.reference_python = reference_python
         self.client = OpenAI(
-            api_key = api_key,
+            api_key=api_key,
         )
         self.M_name = M_name
         self.mix_python = mix_python
 
     def gen_program(self):
-        template_method_decomposition = '''
+        template_method_decomposition = """
 <RULE>
 The system and the assistant exchange messages.
 All messages MUST be formatted in XML format. XML element ::= <tag attribute="value">content</tag>
@@ -118,16 +118,25 @@ Caution.
 </MIXED_METHOD>
 
 <EOS></EOS>
-'''.strip()
+""".strip()
 
-        llm = ChatGPT(temperature=0.7, top_p=0.5, max_tokens=2048, stop='<EOS', model='gpt-4-turbo-preview')
+        llm = ChatGPT(
+            temperature=0.7,
+            top_p=0.5,
+            max_tokens=2048,
+            stop="<EOS",
+            model="gpt-4-turbo-preview",
+        )
         func_method_decomposition = LLMFunction(
-            llm, template=template_method_decomposition, variables=['M_name','reference_python','mix_python'])
-        ret = func_method_decomposition(M_name=self.M_name,reference_python=self.reference_python,mix_python=self.mix_python)
+            llm,
+            template=template_method_decomposition,
+            variables=["M_name", "reference_python", "mix_python"],
+        )
+        ret = func_method_decomposition(
+            M_name=self.M_name,
+            reference_python=self.reference_python,
+            mix_python=self.mix_python,
+        )
 
         LP = LPML_paeser()
-        return(LP.deparse(LP.parse(ret)[1]['content']))
-
-
-
-
+        return LP.deparse(LP.parse(ret)[1]["content"])

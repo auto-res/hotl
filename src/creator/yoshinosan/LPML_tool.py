@@ -40,25 +40,24 @@ def exec_python(code, namespace={}):
 
 
 class Python:
-
-    def __init__(self, output_tag='OUTPUT'):
+    def __init__(self, output_tag="OUTPUT"):
         self.output_tag = output_tag
         self.namespace = {}
 
     def __call__(self, element):
-        if element['tag'] != 'PYTHON':
+        if element["tag"] != "PYTHON":
             raise ValueError
-        code = '\n'.join(element['content'])
+        code = "\n".join(element["content"])
         out = exec_python(code, self.namespace).strip()
-        if out == '':
-            out = 'Error: Use `print()` to get output.'
+        if out == "":
+            out = "Error: Use `print()` to get output."
         output = {
-            'tag': self.output_tag,
-            'attributes': element['attributes'].copy(),
-            'content': ['\n', out, '\n']
+            "tag": self.output_tag,
+            "attributes": element["attributes"].copy(),
+            "content": ["\n", out, "\n"],
         }
         return output
 
 
-def python(element, output_tag='OUTPUT'):
+def python(element, output_tag="OUTPUT"):
     return Python(output_tag)(element)
