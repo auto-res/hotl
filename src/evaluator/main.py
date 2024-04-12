@@ -2,6 +2,9 @@ from ..utils.log_config import setup_logging
 
 from .dataset.tabledata.titanic import titanic_data
 from .dataset.cv.cifar10 import cifar10_data
+from .dataset.cv.cifar100 import cifar100_data
+from .dataset.cv.fashion_mnist import fashion_mnist_data
+from .dataset.cv.mnist import mnist_data
 
 from .metrix.binary_classification import (
     binary_classification,
@@ -54,6 +57,27 @@ class Evaluator:
         elif self.dataset_name == "cifar10":
             self.datatype = "image"
             self.train_dataloader, self.test_dataloader = cifar10_data(
+                self.datasave_path
+            )
+            self.metrix = multiclass_classification
+            self.objective = multiclass_classification_objective(self.valuation_index)
+        elif self.dataset_name == 'cifar100':
+            self.datatype = "image"
+            self.train_dataloader, self.test_dataloader = cifar100_data(
+                self.datasave_path
+            )
+            self.metrix = multiclass_classification
+            self.objective = multiclass_classification_objective(self.valuation_index)
+        elif self.dataset_name == 'fashion_mnist':
+            self.datatype = "image"
+            self.train_dataloader, self.test_dataloader = fashion_mnist_data(
+                self.datasave_path
+            )
+            self.metrix = multiclass_classification
+            self.objective = multiclass_classification_objective(self.valuation_index)
+        elif self.dataset_name == 'mnist':
+            self.datatype = "image"
+            self.train_dataloader, self.test_dataloader = mnist_data(
                 self.datasave_path
             )
             self.metrix = multiclass_classification
