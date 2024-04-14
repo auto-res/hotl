@@ -40,25 +40,65 @@ exec_code_path = coder.exec(base_code_path, new_method_path, file_name)
 ```
 
 - Evaluator
-
     - 実行方法
-インスタンス化
-```python
-eval = Evaluator(
-    llm_name=llm_name,
-    dataset_name='cifar10',
-    params=params,
-    valuation_index='accuracy',
-    datasave_path='../../data',
-    n_trials=10,
-    )
-```
-実行
-```python
-result = eval.exec(exec_code_path)
-```
-
+    インスタンス化
+    ```python
+    eval = Evaluator(
+        llm_name=llm_name,
+        dataset_name='cifar10',
+        params=params,
+        valuation_index='accuracy',
+        datasave_path='../../data',
+        n_trials=10,
+        )
+    ```
+    実行
+    ```python
+    result = eval.exec(exec_code_path)
+    ```
     - 利用可能なデータセット
-    
-    
+        - CIFAR10
+        ```python
+        dataset_name='cifar100'
+        ```
+        - CIFAR100
+        ```python
+        dataset_name='cifar100'
+        ```
+        - MNIST
+        ```python
+        dataset_name='mnist'
+        ```
+        - Fashion MNIST
+        ```python
+        dataset_name='fashion_mnist'
+        ```
     - 評価指標
+        - 二値分類
+        - マルチクラス分類
+        - 回帰
+
+- 利用可能なLLM
+    - OpenAI
+        - gpt-4-turbo-preview
+        ```python
+        llm_name == "gpt-4-turbo-preview"
+        ```
+         - gpt-4-turbo-2024-04-09
+        ```python
+        llm_name == "gpt-4-turbo-2024-04-09"
+        ```
+        - gpt-3.5-turbo-0125
+        ```python
+        llm_name == "gpt-3.5-turbo-0125"
+        ```
+    - Google
+        - gemini-pro
+        ```python
+        llm_name == "gemini-pro"
+        ```
+    - Anthropic
+        - claude-3-opus-20240229
+        ```python
+        llm_name == "claude-3-opus-20240229"
+        ```

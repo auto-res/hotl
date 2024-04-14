@@ -61,30 +61,30 @@ class Evaluator:
             )
             self.metrix = multiclass_classification
             self.objective = multiclass_classification_objective(self.valuation_index)
-        elif self.dataset_name == 'cifar100':
+        elif self.dataset_name == "cifar100":
             self.datatype = "image"
             self.train_dataloader, self.test_dataloader = cifar100_data(
                 self.datasave_path
             )
             self.metrix = multiclass_classification
             self.objective = multiclass_classification_objective(self.valuation_index)
-        elif self.dataset_name == 'fashion_mnist':
+        elif self.dataset_name == "fashion_mnist":
             self.datatype = "image"
             self.train_dataloader, self.test_dataloader = fashion_mnist_data(
                 self.datasave_path
             )
             self.metrix = multiclass_classification
             self.objective = multiclass_classification_objective(self.valuation_index)
-        elif self.dataset_name == 'mnist':
+        elif self.dataset_name == "mnist":
             self.datatype = "image"
-            self.train_dataloader, self.test_dataloader = mnist_data(
-                self.datasave_path
-            )
+            self.train_dataloader, self.test_dataloader = mnist_data(self.datasave_path)
             self.metrix = multiclass_classification
             self.objective = multiclass_classification_objective(self.valuation_index)
 
     def _select_llm(self):
         if self.llm_name == "gpt-4-turbo-preview":
+            self.llm_model = _openai_model
+        elif self.llm_name == "gpt-4-turbo-2024-04-09":
             self.llm_model = _openai_model
         elif self.llm_name == "gpt-3.5-turbo-0125":
             self.llm_model = _openai_model
