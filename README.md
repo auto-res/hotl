@@ -41,6 +41,8 @@ exec_code_path = coder.exec(base_code_path, new_method_path, file_name)
 
 - Evaluator
 
+    - 実行方法
+インスタンス化
 ```python
 eval = Evaluator(
     llm_name=llm_name,
@@ -51,8 +53,12 @@ eval = Evaluator(
     n_trials=10,
     )
 ```
-
+実行
 ```python
 result = eval.exec(exec_code_path)
 ```
 
+    - 利用可能なデータセット
+    
+    
+    - 評価指標

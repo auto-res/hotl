@@ -15,13 +15,8 @@ makemethod_logger, _, _ = setup_logging()
 
 
 class Coder:
-    def __init__(
-        self,
-        llm_name: str,
-        save_dir: str,
-    ):
+    def __init__(self, llm_name: str):
         self.llm_name = llm_name
-        self.save_dir = save_dir
         self._load_prompt_templates()
         self._select_llm()
 
@@ -63,11 +58,6 @@ class Coder:
         )
         return lpml_base_code
 
-    def _read_file(self, new_method_path):
-        with open(new_method_path, "r") as f:
-            new_method = f.read()
-        return new_method
-
     def _exec_lpml(self, method1, method2):
         prompt_args = {
             "elemental_method1": method1,
@@ -86,19 +76,23 @@ class Coder:
             python_code = match.group(1)
             return python_code
 
-    def _write_file(self, save_file_name, exec_code):
-        save_path = self.save_dir + save_file_name
-        with open(save_path, "w") as f:
-            f.write(exec_code)
-        return save_path
+    def _read_file(self, new_method_path):
+        with open(new_method_path, "r") as f:
+            new_method = f.read()
+        return new_method
 
-    def exec(self, base_code_path, new_method_path, save_file_name):
-        base_code = self._read_file(base_code_path)
+    def _write_file(self, save_file_path, exec_code):
+        with open(save_file_path, "w") as f:
+            f.write(exec_code)
+        return
+
+    def exec(self, base_file_path, new_method_path, save_file_path):
+        base_code = self._read_file(base_file_path)
         new_method = self._read_file(new_method_path)
         lpml_base_code = self._code2lpml(base_code)
         lpml_output = self._exec_lpml(lpml_base_code, new_method)
         # makemethod_logger.info(f"synthetic method:\n {synthetic_method}")
         exec_code = self._method_extraction(lpml_output)
         # makemethod_logger.info(f"synthetic code:\n {synthetic_code}")
-        exec_code_path = self._write_file(save_file_name, exec_code)
-        return exec_code_path
+        self._write_file(save_file_path, exec_code)
+        return
