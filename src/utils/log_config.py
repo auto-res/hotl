@@ -1,7 +1,18 @@
 import logging
 
 
+import logging
+
 def setup_logging():
+    """
+    Set up logging for the application.
+
+    Returns:
+        Tuple[logging.Logger, logging.Logger, logging.Logger]: A tuple containing three loggers:
+            - `makemethod_logger`: Logger for MakeMethodLogger.
+            - `result_logger`: Logger for ResultLogger.
+            - `model_logger`: Logger for ModelErrorLogger.
+    """    
     # ロガー1の設定
     makemethod_logger = logging.getLogger("MakeMethodLogger")
     makemethod_logger.setLevel(logging.DEBUG)

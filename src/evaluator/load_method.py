@@ -8,6 +8,18 @@ _, _, model_logger = setup_logging()
 
 
 def load_method_from_path(copy_file_path, method_name="model"):
+    """Load a method from a specified file path.
+
+    Args:
+        copy_file_path (str): The file path of the module to import.
+        method_name (str, optional): The name of the method to load. Defaults to "model".
+
+    Raises:
+        ImportError: If the method is not found in the specified file path.
+
+    Returns:
+        object: The loaded method.
+    """    
     module_name = copy_file_path.split("/")[-1].split(".")[0]
 
     try:
@@ -20,10 +32,10 @@ def load_method_from_path(copy_file_path, method_name="model"):
 
         method = getattr(module, method_name, None)
         if method is None:
-            raise model_logger.error(
-                f"Method {method_name} not found in {copy_file_path}", exc_info=True
+            raise ImportError(
+                f"Method {method_name} not found in {copy_file_path}"
             )
-        model_logger.info("メソッドが正常にインポートされました")
+        model_logger.info("The method was imported successfully")
 
     except Exception as error:
         model_logger.error(

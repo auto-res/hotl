@@ -19,6 +19,27 @@ _, result_logger, _ = setup_logging()
 
 
 def binary_classification(y_test, y_prob: NDArray[np.float64], valuation_index: str):
+    """
+    Calculate evaluation metrics for binary classification.
+
+    Args:
+        y_test (array-like): True labels of the binary classification.
+        y_prob (NDArray[np.float64]): Predicted probabilities of the positive class.
+        valuation_index (str): The evaluation metric to calculate. Can be one of the following:
+            - "f1_score": F1 score
+            - "accuracy": Accuracy
+            - "logloss": Logarithmic loss
+            - "roc_auc": Area under the ROC curve
+            - "precision": Precision
+            - "recall": Recall
+            - "pr_auc": Area under the precision-recall curve
+
+    Raises:
+        ValueError: If the valuation_index is not one of the defined options.
+
+    Returns:
+        float: The value of the specified evaluation metric.
+    """    
     threshold = 0.5
     y_pred = np.where(np.array(y_prob) > threshold, 1, 0)
     f1 = f1_score(y_test, y_pred)
@@ -56,6 +77,14 @@ def binary_classification(y_test, y_prob: NDArray[np.float64], valuation_index: 
 
 
 def binary_classification_objective(valuation_index):
+    """Returns the optimization direction for a given valuation index.
+
+    Args:
+        valuation_index (str): The valuation index to determine the optimization direction for.
+
+    Returns:
+        str: The optimization direction for the given valuation index. Possible values are 'maximize' or 'minimize'.
+    """    
     if valuation_index == "f1_score":
         return "maximize"
     elif valuation_index == "accuracy":

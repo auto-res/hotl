@@ -11,6 +11,23 @@ _, result_logger, model_logger = setup_logging()
 def _exec_model(
     llm_name, llm_model, copy_file_path, train_dataloader, test_dataloader, params
 ):
+    """
+    Executes the model.
+
+    Args:
+        llm_name (str): The name of the model.
+        llm_model (str): The model to be executed.
+        copy_file_path (str): The file path for copying the model.
+        train_dataloader (type): The training dataloader.
+        test_dataloader (type): The test dataloader.
+        params (type): Additional parameters for the model.
+
+    Raises:
+        ValueError: If `y_pred` is not a NumPy array.
+
+    Returns:
+        numpy.ndarray: The predicted values.
+    """
     result_logger.info("------exec model------")
     retry_limit = 10
     retry_count = 0
@@ -26,7 +43,7 @@ def _exec_model(
         except Exception as error:
             model_logger.error(f"Exec Error: {error}", exc_info=True)
 
-            # モデル修正にすべてのエラー情報を渡すための処理
+            # Process to pass all error information to model modification
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback_details = traceback.format_exception(
                 exc_type, exc_value, exc_traceback
@@ -35,12 +52,12 @@ def _exec_model(
 
             retry_count += 1
             if retry_count >= retry_limit:
-                model_logger.error("試行回数が上限に達しました")
+                model_logger.error("Maximum retry limit reached")
 
     if retry_count < retry_limit:
-        model_logger.error("処理が成功し、ループを終了しました")
+        model_logger.error("Execution successful, exiting the loop")
     else:
-        model_logger.error("最大試行回数を超えましたが、処理は成功しませんでした")
+        model_logger.error("Maximum retry limit reached, execution failed")
 
 
 def pred_dataloader(
@@ -53,6 +70,21 @@ def pred_dataloader(
     params,
     valuation_index,
 ):
+    """Predict the output using the given model and dataloaders.
+
+    Args:
+        llm_name (str): The name of the model.
+        llm_model (object): The model object.
+        copy_file_path (str): The file path for copying the model.
+        train_dataloader (object): The dataloader for training data.
+        test_dataloader (object): The dataloader for test data.
+        metric (function): The evaluation metric function.
+        params (dict): Additional parameters for prediction.
+        valuation_index (int): The index for valuation.
+
+    Returns:
+        int: The evaluation index.
+    """    
     result_logger.info("------pred dataloader------")
     y_pred = _exec_model(
         llm_name, llm_model, copy_file_path, train_dataloader, test_dataloader, params

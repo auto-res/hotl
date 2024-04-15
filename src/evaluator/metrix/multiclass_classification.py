@@ -10,6 +10,20 @@ _, result_logger, _ = setup_logging()
 
 
 def multiclass_classification(y_test, y_prob, valuation_index):
+    """
+    Calculate various metrics for multiclass classification.
+
+    Args:
+        y_test (array-like): True labels of the test data.
+        y_prob (array-like): Predicted probabilities for each class.
+        valuation_index (str): The evaluation metric to be used.
+
+    Raises:
+        ValueError: If the valuation_index is not defined.
+
+    Returns:
+        float: The value of the specified evaluation metric.
+    """
     n_classes = y_prob.shape[1]
     # 確率から予測クラスに変換
     y_pred = np.argmax(y_prob, axis=1)
@@ -65,6 +79,18 @@ def multiclass_classification(y_test, y_prob, valuation_index):
 
 # 目的関数は、指標に応じて最大化または最小化を指定します。
 def multiclass_classification_objective(valuation_index):
+    """
+    Determine the objective (maximize or minimize) for a given valuation index in multiclass classification.
+
+    Args:
+        valuation_index (str): The valuation index to determine the objective for.
+
+    Raises:
+        ValueError: If the valuation_index is not supported for multiclass classification.
+
+    Returns:
+        str: The objective (maximize or minimize) for the given valuation index.
+    """    
     if valuation_index in [
         "f1_macro",
         "f1_micro",

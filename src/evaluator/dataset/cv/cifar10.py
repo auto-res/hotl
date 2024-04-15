@@ -3,6 +3,14 @@ from torchvision import datasets, transforms
 
 
 def cifar10_data(datasave_path):
+    """Load CIFAR-10 dataset and return data loaders for training and testing.
+
+    Args:
+        datasave_path (str): The directory where the CIFAR-10 dataset will be saved.
+
+    Returns:
+        tuple: A tuple containing the training data loader and the testing data loader.
+    """    
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )

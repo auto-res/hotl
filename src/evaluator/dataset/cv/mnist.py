@@ -2,6 +2,15 @@ import torch
 from torchvision import datasets, transforms
 
 def mnist_data(datasave_path):
+    """
+    Load the MNIST dataset and return the trainloader and testloader.
+
+    Args:
+        datasave_path (str): The path to save the dataset.
+
+    Returns:
+        tuple: A tuple containing the trainloader and testloader.
+    """
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize((0.5,), (0.5,))])

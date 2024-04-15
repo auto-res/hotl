@@ -3,6 +3,12 @@ import seaborn as sns
 
 
 def titanic_data():
+    """Returns the encoded Titanic dataset.
+
+    Returns:
+        df_encoded (pandas.DataFrame): The encoded Titanic dataset with dropped NaN values and categorical columns converted to numerical using one-hot encoding.
+        None: There is no additional information returned.
+    """    
     df = sns.load_dataset("titanic")
     df.dropna(inplace=True)
 

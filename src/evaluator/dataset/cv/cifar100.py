@@ -2,6 +2,15 @@ import torch
 from torchvision import datasets, transforms
 
 def cifar100_data(datasave_path):
+    """
+    Load and return the CIFAR-100 dataset.
+
+    Args:
+        datasave_path (str): The directory where the dataset will be saved.
+
+    Returns:
+        tuple: A tuple containing the trainloader and testloader for the CIFAR-100 dataset.
+    """    
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])

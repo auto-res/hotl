@@ -2,6 +2,15 @@ import google.generativeai as genai
 
 
 def _googel_model(model_name, prompt):
+    """Generates content using a generative model.
+
+    Args:
+        model_name (str): The name of the generative model.
+        prompt (str): The prompt for generating content.
+
+    Returns:
+        str: The generated content.
+    """    
     model = genai.GenerativeModel(
         model_name,
         generation_config=dict(

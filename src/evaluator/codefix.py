@@ -4,6 +4,17 @@ _, _, model_logger = setup_logging()
 
 
 def codefix(llm_name, llm_model, copy_file_path, error):
+    """Fixes the code based on the given error message.
+
+    Args:
+        llm_name (str): The name of the llm.
+        llm_model (object): The llm model object.
+        copy_file_path (str): The path of the file to be fixed.
+        error (str): The error message.
+
+    Returns:
+        None
+    """    
     model_logger.info("------Codefix------")
 
     with open(copy_file_path, "r") as file:

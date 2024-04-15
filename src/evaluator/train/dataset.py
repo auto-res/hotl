@@ -10,6 +10,24 @@ _, result_logger, model_logger = setup_logging()
 
 
 def _exec_model(llm_name, llm_model, copy_file_path, X_train, y_train, X_test, params):
+    """
+    Executes the model.
+
+    Args:
+        llm_name (str): The name of the model.
+        llm_model (str): The model to be executed.
+        copy_file_path (str): The file path of the model.
+        X_train (array-like): The training data.
+        y_train (array-like): The target values for the training data.
+        X_test (array-like): The test data.
+        params (dict): Additional parameters for the model.
+
+    Raises:
+        ValueError: If the predicted values are not a NumPy array.
+
+    Returns:
+        array-like: The predicted values.
+    """
     result_logger.info("------exec model------")
     retry_limit = 10
     retry_count = 0
@@ -25,7 +43,7 @@ def _exec_model(llm_name, llm_model, copy_file_path, X_train, y_train, X_test, p
         except Exception as error:
             model_logger.error(f"Exec Error: {error}", exc_info=True)
 
-            # モデル修正にすべてのエラー情報を渡すための処理
+            # Process to pass all error information to model fix
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback_details = traceback.format_exception(
                 exc_type, exc_value, exc_traceback
@@ -34,15 +52,30 @@ def _exec_model(llm_name, llm_model, copy_file_path, X_train, y_train, X_test, p
 
             retry_count += 1
             if retry_count >= retry_limit:
-                model_logger.error("試行回数が上限に達しました")
+                model_logger.error("Maximum retry limit reached")
 
     if retry_count < retry_limit:
-        model_logger.error("処理が成功し、ループを終了しました")
+        model_logger.error("Execution successful, exiting loop")
     else:
-        model_logger.error("最大試行回数を超えましたが、処理は成功しませんでした")
+        model_logger.error("Maximum retry limit reached, execution failed")
 
 
 def pred_dataset(llm_model, copy_file_path, dataset, metrix, params, valuation_index):
+    """
+    Predicts the target variable using the provided LLN model and evaluates the performance using the given metrics.
+
+    Args:
+        llm_model (object): The LLN model object used for prediction.
+        copy_file_path (str): The file path for copying the model.
+        dataset (pandas.DataFrame): The dataset containing the features and target variable.
+        metrix (function): The evaluation metric function to be used.
+        params (dict): Additional parameters for model execution.
+        valuation_index (int): The index used for valuation.
+
+    Returns:
+        float: The average evaluation index across multiple rounds of prediction.
+
+    """
     result_logger.info("------pred dataset------")
     X = dataset.drop(columns=["target"]).values
     y = dataset["target"].values
