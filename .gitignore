@@ -162,4 +162,6 @@ cython_debug/
 .ruff_cache
 data/*
 
+.bash_history
+
 !.gitkeep

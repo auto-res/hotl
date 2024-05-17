@@ -1,0 +1,30 @@
+# streamlitがサポートしているのはpython3.7〜3.9
+FROM python:3.9.13-slim
+USER root
+
+RUN apt-get update && apt-get install -y \
+    locales \
+    tzdata \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+    
+RUN locale-gen ja_JP.UTF-8
+
+# environment
+ENV LANG="ja_JP.UTF-8" \
+    LANGUAGE="ja_JP:ja" \
+    LC_ALL="ja_JP.UTF-8" \
+    TZ="Asia/Tokyo"
+
+
+
+#COPY . ~/streamlit
+
+# Installing packages
+WORKDIR root/src/streamlit
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+EXPOSE 8080
+
+ENTRYPOINT ["streamlit", "run", "main.py", "--server.port=8080", "--server.address=0.0.0.0"]
