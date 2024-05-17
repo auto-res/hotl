@@ -1,0 +1,49 @@
+# フォルダー構成について
+
+
+- data...実行した際にデータを格納するフォルダー
+- docs...ドキュメント
+    - development_rule.md...開発ルールについて記載
+    - environment_building.md...開発環境を作成する方法を記載
+    - folder.md...フォルダー構成について記載
+- images...READMEなどで使う画像を保存
+- logs...出力したlogを格納するフォルダー
+- notebook...開発時に使うnotebookを格納
+    - yoshinosan...吉野さんが開発時に使ったnotebookが格納してあります
+    - tanaka...田中が開発時に使ったnotebook
+- output...出力結果を格納するフォルダー
+- src...メインのコード
+    - autorescreator
+        - yoshinosan...吉野さんが以前開発していたものを書くのしています
+        - tanaka...田中の開発しているものです
+    - autoresevaluator
+        - dataset
+            - cv
+            - nlp
+            - tabledata
+        - metrix
+            - binary_classification.py
+            - multiclass_classification.py
+            - regression.py
+        - train
+        - codefix.py
+        - load_method.py
+        - main.py
+    - method_dataset...検証で使う手法のデータセット
+        - architecture
+        - base_model
+        - loss_function
+        - optimizer
+    - utils
+        - llm
+            - anthropic.py
+            - google.py
+            - openai.py
+        - prompt_template
+            - synthetic_template.j2...手法を合成するためのテンプレート
+        - jinja_template.py...jinjaテンプレートに変数を埋め込むためのスクリプト
+        - log_config.py...ログファイルに出力するためのスクリプト
+- .gitignore...不要なファイルをpushしないようにするため
+- LICENSE...ライセンス
+- pyproject.toml...srcが依存しているライブラリのまとめ,requirement.txtと同じ
+- README.md...リポジトリの説明
