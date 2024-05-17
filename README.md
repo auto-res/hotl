@@ -3,13 +3,14 @@
 
 ## 開発者向け
 - [フォルダー構成](https://github.com/auto-res/Mockup_python/blob/develop/docs/folder.md)
-- [環境構築](https://github.com/auto-res/Mockup_python/blob/develop/docs/environment_building)
+- [環境構築](https://www.notion.so/dead026297e04a9399987ea8e02df1da)
 - [開発ルール](https://github.com/auto-res/Mockup_python/blob/develop/docs/development_rule.md)
+- [デモアプリについて](https://github.com/auto-res/Mockup_python/tree/main/src/streamlit)
 
 
 ## リポジトリの説明
 
-
+![system](images/system.png)
 
 
 
