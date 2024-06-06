@@ -8,7 +8,7 @@
 bash run.sh up
 
 # イメージのビルドとコンテナの起動
-basu run.sh force
+bash run.sh force
 
 # コンテナの停止
 bash run.sh down

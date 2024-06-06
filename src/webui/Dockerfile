@@ -16,12 +16,10 @@ ENV LANG="ja_JP.UTF-8" \
     LC_ALL="ja_JP.UTF-8" \
     TZ="Asia/Tokyo"
 
-
-
 #COPY . ~/streamlit
 
 # Installing packages
-WORKDIR root/src/streamlit
+WORKDIR root/src/webui
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
