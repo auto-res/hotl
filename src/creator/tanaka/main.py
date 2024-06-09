@@ -6,9 +6,9 @@ from ...utils.jinja_template import make_prompt
 import importlib.resources as pkg_resources
 
 
-from ...utils.llm.openai import _openai_model
-from ...utils.llm.google import _googel_model
-from ...utils.llm.anthropic import _anthropic_model
+from ...utils.llm.openai_model import _openai_model
+from ...utils.llm.google_model import _googel_model
+from ...utils.llm.anthropic_model import _anthropic_model
 
 makemethod_logger, _, _ = setup_logging()
 

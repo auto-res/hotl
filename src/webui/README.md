@@ -21,6 +21,8 @@ bash run.sh rm
  
 http://13.231.244.48:8080
 
+http://57.181.31.178:8080
+
 
 ## コンテナ環境に入る
 ```bash
@@ -29,4 +31,11 @@ docker ps
 
 # コンテナ何に入る
 docker exec -it autores-demo /bin/bash
+```
+
+## Coderの実行
+```
+base_file_path = "/home/ec2-user/Mockup_python/src/test/base_model.py"
+new_method_path = "/home/ec2-user/Mockup_python/src/test/new_method.txt"
+save_file_path="/home/ec2-user/Mockup_python/src/test/exec_code.py"
 ```

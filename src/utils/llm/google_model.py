@@ -1,7 +1,7 @@
 import google.generativeai as genai
 
 
-def _googel_model(model_name, prompt):
+def _google_model(model_name, prompt):
     """Generates content using a generative model.
 
     Args:
@@ -25,3 +25,7 @@ def _googel_model(model_name, prompt):
     response = model.generate_content(prompt)
 
     return response.text
+
+if __name__ == "__main__":
+    text = _google_model("gemini-1.0-pro", "Hello,")
+    print(text)

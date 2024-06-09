@@ -15,9 +15,9 @@ from .metrix.multiclass_classification import (
     multiclass_classification_objective,
 )
 
-from ..utils.llm.openai import _openai_model
-from ..utils.llm.google import _googel_model
-from ..utils.llm.anthropic import _anthropic_model
+from ..utils.llm.openai_model import _openai_model
+from ..utils.llm.google_model import _google_model
+from ..utils.llm.anthropic_model import _anthropic_model
 
 from .train.optuna import exec_optuna
 import shutil
@@ -91,11 +91,11 @@ class Evaluator:
         elif self.llm_name == "gpt-4o-2024-05-13":
             self.llm_model = _openai_model
         elif self.llm_name == "gemini-1.5-pro":
-            self.llm_model = _googel_model
+            self.llm_model = _google_model
         elif self.llm_name == "gemini-1.5-flash":
-            self.llm_model = _googel_model
+            self.llm_model = _google_model
         elif self.llm_name == "gemini-1.0-pro":
-            self.llm_model = _googel_model
+            self.llm_model = _google_model
         elif self.llm_name == "claude-3-opus-20240229":
             self.llm_model = _anthropic_model
         elif self.llm_name == "claude-3-haiku-20240307":

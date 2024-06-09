@@ -18,4 +18,9 @@ def _anthropic_model(model_name, prompt):
         max_tokens=1024,
         messages=[{"role": "user", "content": prompt}],
     )
-    return message.content
+    return message.content[0].text
+
+
+if __name__ == "__main__":
+    text = _anthropic_model("claude-3-haiku-20240307", "Hello,")
+    print(text)
