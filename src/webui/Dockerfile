@@ -16,14 +16,27 @@ ENV LANG="ja_JP.UTF-8" \
     LC_ALL="ja_JP.UTF-8" \
     TZ="Asia/Tokyo"
 
-
-
 #COPY . ~/streamlit
 
-# Installing packages
-WORKDIR root/src/streamlit
+# Poetryをインストール
+#RUN pip install poetry
+
+# ワーキングディレクトリの設定
+#WORKDIR /root
+
+# pyproject.toml と poetry.lock ファイルをコピー
+#COPY pyproject.toml poetry.lock ./
+#COPY /root/pyproject.toml /root/poetry.lock ./
+
+# 依存関係のインストール
+#RUN poetry config virtualenvs.create false
+#RUN poetry update
+#RUN poetry install --no-dev
+
+WORKDIR root/src/webui
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
 
 EXPOSE 8080
 

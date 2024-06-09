@@ -1,12 +1,16 @@
 version: "3.9"
 
 services:
-  streamlit:
+  webui:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: autores-demo
     restart: always
+    environment:
+      - PYTHONPATH=/root
+    env_file:
+      - /home/ec2-user/Mockup_python/.env
     expose:
       # コンテナ側のポート
       # https://tkzo.jp/blog/difference-between-ports-and-expose-in-docker-compose/
@@ -15,6 +19,6 @@ services:
       # アクセスIP(ここでは127.0.0.1なのでローカルループバックアドレス)からのみ8050ポートへの接続が許可され，コンテナ側の8050ポートへの接続が許可される
       # https://tkzo.jp/blog/difference-between-ports-and-expose-in-docker-compose/
       #- "127.0.0.1:8080:8080"
-      - "8080:8080"  
+      - "8080:8080" 
     volumes:
-      - /home/ec2-user/Mockup_python:/root/
+      - /home/ec2-user/Mockup_python:/root
