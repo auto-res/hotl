@@ -21,8 +21,10 @@ creator_tab, coder_tab, evaluator_tab = st.tabs(["Creator", "Coder", "Evaluator"
 with creator_tab:
     creator_tab_script()
 
-with coder_tab:
-    coder_tab_script()
+
+
+#with coder_tab:
+    #coder_tab_script()
         
-with evaluator_tab:
-    evaluator_tab_script()
+#with evaluator_tab:
+    #evaluator_tab_script()

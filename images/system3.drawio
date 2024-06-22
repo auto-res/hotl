@@ -1,0 +1,89 @@
+<mxfile host="65bd71144e">
+    <diagram id="ZxcFLyq2E93u2O4gh9at" name="ページ1">
+        <mxGraphModel dx="1536" dy="910" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="Creator" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="10" y="330" width="100" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="Verifier" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="230" y="330" width="100" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="Coder" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="490" y="250" width="100" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="Evaluator" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="490" y="410" width="100" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="" style="shape=flexArrow;endArrow=classic;html=1;" edge="1" parent="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="340" y="330" as="sourcePoint"/>
+                        <mxPoint x="470" y="280" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="7" value="" style="shape=flexArrow;endArrow=classic;html=1;" edge="1" parent="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="340" y="360" as="sourcePoint"/>
+                        <mxPoint x="470" y="410" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="10" value="" style="shape=flexArrow;endArrow=classic;html=1;endWidth=10;endSize=5;" edge="1" parent="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="220" y="360" as="sourcePoint"/>
+                        <mxPoint x="120" y="360" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="11" value="" style="shape=flexArrow;endArrow=classic;html=1;endWidth=10;endSize=5;" edge="1" parent="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="120" y="330" as="sourcePoint"/>
+                        <mxPoint x="220" y="330" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="12" value="" style="endArrow=classic;html=1;" edge="1" parent="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="540" y="450" as="sourcePoint"/>
+                        <mxPoint x="60" y="370" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="540" y="480"/>
+                            <mxPoint x="60" y="480"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="13" value="結果のフィードバック" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="490" width="150" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;新規手法の作成&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;(一旦，記載していません)&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="10" y="240" width="150" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="&lt;div style=&quot;&quot;&gt;&lt;br&gt;&lt;/div&gt;新規手法が現状のシステムに含まれている実装で検証可能か２つの観点で判定する．&lt;br&gt;&lt;ul&gt;&lt;li&gt;実行可能か&lt;/li&gt;&lt;li&gt;評価可能か&lt;/li&gt;&lt;/ul&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="212" y="210" width="136" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="検証できな場合は&lt;br&gt;Creatorに戻す" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="121" y="380" width="106" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="検証を行うためのコードを作成&lt;br&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;テンプレートを使い検証を行うための実装を行う&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="250" width="210" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="新規手法の評価&lt;br&gt;検証用のコードと必要な評価の情報をもとに「新規手法」に関する評価を行う．" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="410" width="200" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="" style="shape=flexArrow;endArrow=classic;html=1;endWidth=10;endSize=5;" edge="1" parent="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="539.5" y="290" as="sourcePoint"/>
+                        <mxPoint x="540" y="400" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="20" value="検証用のコード" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="560" y="330" width="150" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="21" value="どのような&lt;br&gt;評価が必要かの情報" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="348" y="420" width="150" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="22" value="どのような&lt;br&gt;実装が必要かの情報" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="350" y="240" width="150" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

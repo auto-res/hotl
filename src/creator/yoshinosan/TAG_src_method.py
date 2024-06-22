@@ -1,10 +1,9 @@
 import streamlit as st
 
 
-def TAG_init():
+def TAG_init_method():
     ###抽象化タグ初期値定義########################
-    if "PROMPTS_abs" not in st.session_state:
-        st.session_state.PROMPTS_abs ="""
+    st.session_state.PROMPTS_abs ="""
 <RULE role="assistant">
 The assistant is a friendly and helpful research assistant, well versed in the various areas of machine learning.
 The assistant's role is to analyze the contents of a given MIXED_METHOD in detail and to decompose it into two ELEMENTAL_METHOD.
@@ -17,8 +16,7 @@ Notes:
     - Next, the other processing must be abstracted and organized in such a way that it can be used as a drop-in for various other methods, and described as a second ELEMENTAL_METHOD.
 </RULE>"""
 
-    if "TAG_DEFINE_abs" not in st.session_state:
-        st.session_state.TAG_DEFINE_abs ="""
+    st.session_state.TAG_DEFINE_abs ="""
 <TAG name="TAG">
 This tag defines a tag. The defined content is absolute.
 Attributes:
@@ -74,8 +72,7 @@ Notes:
 
 
     ###具体化タグ初期値定義########################
-    if "PROMPTS_con" not in st.session_state:
-        st.session_state.PROMPTS_con ="""
+    st.session_state.PROMPTS_con ="""
 <RULE role="assistant">
 The assistant's role is to select one of the two given ELEMENTAL_METHODs and replace an element in the MIXED_METHOD to create a more efficient MIXED_METHOD.
 First, the assistant carefully analyzes the contents of the two ELEMENTAL_METHODs using the THINK tag to understand which one will contribute to the improvement of the MIXED_METHOD's performance. Then, using the MIXED_METHOD tag, the assistant explains how the selected ELEMENTAL_METHOD and the original MIXED_METHOD were combined.
@@ -85,8 +82,7 @@ Notes.
 - There are many ways to combine, but the assistant must perform the combination that seems most natural and reasonable.
 </RULE>"""
 
-    if "TAG_DEFINE_con" not in st.session_state:
-        st.session_state.TAG_DEFINE_con ="""
+    st.session_state.TAG_DEFINE_con ="""
 <TAG name="RULE">
 This tag defines rules. The defined content is absolute.
 Attributes:
