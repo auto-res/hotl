@@ -23,8 +23,8 @@ with creator_tab:
 
 
 
-#with coder_tab:
-    #coder_tab_script()
+with coder_tab:
+    coder_tab_script()
         
-#with evaluator_tab:
-    #evaluator_tab_script()
+with evaluator_tab:
+    evaluator_tab_script()
