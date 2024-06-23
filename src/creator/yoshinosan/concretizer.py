@@ -115,11 +115,13 @@ Tags determine the meaning and function of the content. The content must not con
         LP = LPML_paeser()
         if self.prompts_method == 0:
             mix_python = LP.deparse(LP.findall(LP.parse(ret), 'MIXED_METHOD'))
+            mix_python_element = LP.deparse(LP.findall(LP.parse(ret), 'PYTHON'))
             think = LP.deparse(LP.findall(LP.parse(ret), 'THINK'))
         elif self.prompts_method == 1:
             mix_python = LP.deparse(LP.findall(LP.parse(ret), 'MIXED_PROMPT'))
+            mix_python_element = LP.deparse(LP.findall(LP.parse(ret), 'PROMPTS'))
             think = LP.deparse(LP.findall(LP.parse(ret), 'THINK'))
             
-        return mix_python,think
+        return mix_python,mix_python_element,think
     
 

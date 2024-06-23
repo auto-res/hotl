@@ -1,6 +1,7 @@
 import streamlit as st
 from src.creator.yoshinosan.abstractor import Abstractor
 from src.creator.yoshinosan.concretizer import Concretizer
+from src.creator.yoshinosan.validation_prompt import Validation_prompt
 from src.creator.yoshinosan.VALUE_src import VALUE_init
 from src.creator.yoshinosan.TAG_src import TAG_init
 from src.creator.yoshinosan.VALUE_src_prompts import VALUE_init_prompts
@@ -117,7 +118,7 @@ def creator_tab_script():
         max_chars=100000
         )
     
-    if st.button('2. 抽象化・具体化の実行'):
+    if st.button('抽象化・具体化の実行'):
         abs = Abstractor(st.session_state.llm_model,st.session_state.llm_name,txt_api_key,txt_M_patch_code,txt_M_patch_name,
                          st.session_state.PROMPTS_abs,st.session_state.TAG_DEFINE_abs,st.session_state.prompts_method)
         st.session_state.think,st.session_state.python1,st.session_state.python2 = abs.exec()
@@ -132,9 +133,35 @@ def creator_tab_script():
         con = Concretizer(st.session_state.llm_model,st.session_state.llm_name,txt_api_key,txt_M_pre_code,
                           st.session_state.python1,st.session_state.python2,st.session_state.think,txt_OBJECTIVE,
                           st.session_state.PROMPTS_con,st.session_state.TAG_DEFINE_con,st.session_state.prompts_method)
-        st.session_state.mix_python,st.session_state.think2 = con.exec()
+        st.session_state.mix_python,st.session_state.mix_python_element,st.session_state.think2 = con.exec()
         st.markdown('## 具体化結果')
         st.markdown('think2')
         st.code(st.session_state.think2, language="python")
         st.markdown('M_post_code')
         st.code(st.session_state.mix_python, language="python")
+
+    if st.session_state.prompts_method == 1:
+        if st.button('プロンプト検証開始'):
+            st.markdown('## 抽象化結果')
+            st.markdown('think')
+            st.code(st.session_state.think, language="python")
+            st.markdown('python1')
+            st.code(st.session_state.python1, language="python")
+            st.markdown('python2')
+            st.code(st.session_state.python2, language="python")
+            st.markdown('## 具体化結果')
+            st.markdown('think2')
+            st.code(st.session_state.think2, language="python")
+            st.markdown('M_post_code')
+            st.code(st.session_state.mix_python, language="python")
+
+            val = Validation_prompt(st.session_state.llm_model,st.session_state.llm_name,txt_api_key,
+                                    st.session_state.mix_python_element,reference_python_code)
+            st.session_state.val_prompt = val.exec()
+            st.markdown('## 検証結果')
+            st.code(st.session_state.val_prompt, language="latex")
+            st.session_state.judge = val.val()
+            st.code(st.session_state.judge, language="python")
+
+            
+
