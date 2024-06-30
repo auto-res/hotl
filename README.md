@@ -1,4 +1,4 @@
-# AutoRes自動研究
+# Human-on-the-loop Approache
 
 
 ## 開発者向け
@@ -10,7 +10,7 @@
 
 ## リポジトリの説明
 
-![system](images/system.png)
+![system](images/system3.png)
 
 
 

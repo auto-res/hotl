@@ -1,0 +1,16 @@
+<ELEMENTAL_METHOD name="Momentum Calculation and Application">
+This method involves computing the moving average of the gradients (also known as the first moment) and using this to update the model parameters. It's a technique used to accelerate gradients vectors in the right directions, thus leading to faster converging. It is widely used in optimization algorithms, including as a component of the Adam optimizer.
+
+<PYTHON>
+def momentum_update(lr, beta1, params, objective, weight_decay, epsilon):
+    m = 0  # first moment
+    theta = params
+    while True:
+        g = np.gradient(objective(theta), theta)  # gradient of objective function
+        if weight_decay != 0:
+            g += weight_decay * theta
+        m = beta1 * m + (1 - beta1) * g
+        theta -= lr * m
+        yield theta
+</PYTHON>
+</ELEMENTAL_METHOD>
