@@ -1,4 +1,4 @@
-# AutoRes自動研究
+# Human-on-the-loop Approache
 
 
 ## 開発者向け
