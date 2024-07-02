@@ -7,10 +7,10 @@ Created on Sun Feb  4 16:57:10 2024
 
 
 from openai import OpenAI
-from src.creator.yoshinosan.LPML_paeser import LPML_paeser
-from src.creator.yoshinosan.LPML_wrapper_gpt import ChatGPT
-from src.creator.yoshinosan.LPML_wrapper_function import LLMFunction
-from src.creator.yoshinosan.LPML_paeser import LPML_paeser
+from src.creator.LPML_paeser import LPML_paeser
+from src.creator.LPML_wrapper_gpt import ChatGPT
+from src.creator.LPML_wrapper_function import LLMFunction
+from src.creator.LPML_paeser import LPML_paeser
 
 class Concretizer:
     def __init__(self,llm_model,llm_name,api_key,M_pseudo_code,python2_1,python2_2,think2,OBJECTIVE,PROMPTS_con,TAG_DEFINE_con,prompts_method):

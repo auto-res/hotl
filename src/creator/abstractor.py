@@ -7,9 +7,9 @@ Created on Sun Feb  4 16:57:10 2024
 
 
 from openai import OpenAI
-from src.creator.yoshinosan.LPML_paeser import LPML_paeser
-from src.creator.yoshinosan.LPML_wrapper_gpt import ChatGPT
-from src.creator.yoshinosan.LPML_wrapper_function import LLMFunction
+from src.creator.LPML_paeser import LPML_paeser
+from src.creator.LPML_wrapper_gpt import ChatGPT
+from src.creator.LPML_wrapper_function import LLMFunction
 
 
 class Abstractor:
