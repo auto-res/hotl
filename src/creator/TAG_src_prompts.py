@@ -127,6 +127,7 @@ Indicates the end of a message.
 <TAG name="THINK">
 This tag represents a thought process.
 If you use this tag, take a drop deep breath and work on the problem step-by-step.
+Must be answered in Japanese.
 Attributes:
     - label (optional) : A label summarizing the contents.
 Notes:

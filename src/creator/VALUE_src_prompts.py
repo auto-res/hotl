@@ -4,7 +4,7 @@ import streamlit as st
 def VALUE_init_prompts():
     ###値の初期値########################
     st.session_state.txt_OBJECTIVE_value ="""The objective is to generate prompts that will solve the problem more accurately."""
-    st.session_state.txt_M_pre_name_value ="""CoT"""
+    st.session_state.txt_M_pre_name_value ="""Chain of Thought Prompting"""
 
     st.session_state.txt_M_pre_code_value ="""Find the remainder when the sum \\[75+76+77+78+79+80+81+82\\]is divided by 16. Let's think step by step."""
 
@@ -16,4 +16,5 @@ def VALUE_init_prompts():
 The answer is 18.
 At this time, find the remainder when the sum \[10+11+72+7+71+44+11+22\]is divided by 16."""
 
-    st.session_state.reference_python_code_value ="""a"""
+    st.session_state.reference_python_code_value ="""39.25"""
+
