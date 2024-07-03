@@ -14,6 +14,6 @@ def VALUE_init_prompts():
 1+2+3+4+4+5+6+7+8=36
 36/2=18
 The answer is 18.
-At this time, find the remainder when the sum \[10+11+72+7+71+44+11+22\]is divided by 16."""
+At this time, find the remainder when the sum \[75+76+77+78+79+80+81+82\]is divided by 16."""
 
-    st.session_state.reference_python_code_value ="""39.25"""
+    st.session_state.reference_python_code_value ="""4"""

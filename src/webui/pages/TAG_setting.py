@@ -1,5 +1,5 @@
 import streamlit as st
-from src.creator.yoshinosan.TAG_src import TAG_init
+from src.creator.TAG_src import TAG_init
 
 st.markdown('# LPML TAG Setting page')
 
