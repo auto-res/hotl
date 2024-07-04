@@ -16,6 +16,7 @@ class Abstractor:
     def __init__(self,llm_model,llm_name,api_key,M_pseudo_code,method_name,PROMPTS_abs,TAG_DEFINE_abs,prompts_method):
         self.llm_name = llm_name
         self.llm_model = llm_model
+
         self.M_pseudo_code = M_pseudo_code
         self.client = OpenAI(
             api_key = api_key,
@@ -64,6 +65,7 @@ Tags determine the meaning and function of the content. The content must not con
 <EOS></EOS>
 '''.strip()
 
+
         #llm = ChatGPT(temperature=0.7, top_p=0.5, max_tokens=2048, stop='<EOS', model='gpt-4-turbo-preview')
         #func_method_decomposition = LLMFunction(
          #   llm, template=template_method_decomposition, variables=['TAG_DEFINE_abs','PROMPTS_abs','mixed_method'])
@@ -87,6 +89,7 @@ Tags determine the meaning and function of the content. The content must not con
 
         ret = func_method_decomposition(TAG_DEFINE_abs=self.TAG_DEFINE_abs, PROMPTS_abs=self.PROMPTS_abs, mixed_method=mixed_method)
         ret = self.llm_model(self.llm_name, ret)
+
         LP = LPML_paeser()
         think = LP.deparse(LP.findall(LP.parse(ret), 'THINK')[0]['content'])
         if self.prompts_method == 0:

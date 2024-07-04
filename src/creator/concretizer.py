@@ -111,6 +111,7 @@ Tags determine the meaning and function of the content. The content must not con
         ret = func_method_decomposition(TAG_DEFINE_con=self.TAG_DEFINE_con, PROMPTS_con=self.PROMPTS_con,
                                         M_pseudo_code=self.M_pseudo_code, python2_1=self.python2_1, 
                                         python2_2=self.python2_2,think2=self.think2,OBJECTIVE=self.OBJECTIVE)
+
         ret = self.llm_model(self.llm_name, ret)
         LP = LPML_paeser()
         if self.prompts_method == 0:
@@ -123,5 +124,6 @@ Tags determine the meaning and function of the content. The content must not con
             think = LP.deparse(LP.findall(LP.parse(ret), 'THINK'))
             
         return mix_python,mix_python_element,think
+
     
 
