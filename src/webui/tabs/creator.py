@@ -2,6 +2,7 @@ import streamlit as st
 from src.creator.abstractor import Abstractor
 from src.creator.concretizer import Concretizer
 from src.creator.validation_prompt import Validation_prompt
+from src.creator.correction_prompt import Correction_prompt
 from src.creator.VALUE_src import VALUE_init
 from src.creator.TAG_src import TAG_init
 from src.creator.VALUE_src_prompts import VALUE_init_prompts
@@ -162,6 +163,34 @@ def creator_tab_script():
             st.code(st.session_state.val_prompt, language="latex")
             st.session_state.judge = val.val()
             st.code(st.session_state.judge, language="python")
+
+
+
+        if st.button('試行開始'):
+            st.markdown('## 抽象化結果')
+            st.markdown('think')
+            st.code(st.session_state.think, language="python")
+            st.markdown('python1')
+            st.code(st.session_state.python1, language="python")
+            st.markdown('python2')
+            st.code(st.session_state.python2, language="python")
+            st.markdown('## 具体化結果')
+            st.markdown('think2')
+            st.code(st.session_state.think2, language="python")
+            st.markdown('M_post_code')
+            st.code(st.session_state.mix_python, language="python")
+
+            st.session_state.txt_correction = st.text_input(
+                    '試行回数',  
+                    value = 5,
+                    max_chars=10)
+
+            for correction_n in range(int(st.session_state.txt_correction)):
+                cor = Correction_prompt(st.session_state.llm_model,st.session_state.llm_name,txt_api_key,
+                            st.session_state.PROMPTS_abs,st.session_state.PROMPTS_con,st.session_state.mix_python_element)
+                st.session_state.ret = cor.exec()
+                st.code(st.session_state.ret, language="latex")
+                    
 
             
 
